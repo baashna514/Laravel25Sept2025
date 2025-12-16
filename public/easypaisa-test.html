@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="test-token">
+    <title>Easypaisa Payment Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #2ecc71;
+            box-shadow: 0 0 5px rgba(46, 204, 113, 0.3);
+        }
+        .btn {
+            background-color: #2ecc71;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn:hover {
+            background-color: #27ae60;
+        }
+        .btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .info {
+            background-color: #e8f4fd;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .example {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .example h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .example code {
+            background-color: #e9ecef;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Easypaisa Payment Integration Test</h2>
+        
+        <div class="info">
+            <strong>Note:</strong> This is a test form for the Easypaisa payment integration. 
+            Make sure to configure your environment variables before testing.
+        </div>
+
+        <form id="easypaisa-payment-form">
+            <div class="form-group">
+                <label for="mobile_number">Mobile Number:</label>
+                <input type="text" id="mobile_number" name="mobile_number" 
+                       placeholder="e.g., 03001234567 or +923001234567" 
+                       value="03001234567" required>
+                <small>Enter Pakistani mobile number (with or without +92)</small>
+            </div>
+
+            <div class="form-group">
+                <label for="amount">Amount (PKR):</label>
+                <input type="number" id="amount" name="amount" 
+                       placeholder="Enter amount in PKR" 
+                       value="100" min="1" max="1000000" step="0.01" required>
+                <small>Enter amount between 1 and 1,000,000 PKR</small>
+            </div>
+
+            <button type="submit" id="submit-btn" class="btn">
+                Pay with Easypaisa
+            </button>
+        </form>
+
+        <div class="example">
+            <h4>API Usage Example:</h4>
+            <p>To use this API from your frontend, make a POST request to:</p>
+            <code>POST /api/easypaisa/pay</code>
+            
+            <p><strong>Request Body:</strong></p>
+            <pre><code>{
+    "mobile_number": "03001234567",
+    "amount": 100
+}</code></pre>
+
+            <p><strong>Response:</strong></p>
+            <pre><code>{
+    "success": true,
+    "transaction_id": "TXN_1234567890_abc123",
+    "form": "&lt;HTML form for auto-submit&gt;"
+}</code></pre>
+        </div>
+    </div>
+
+    <script src="/js/easypaisa-example.js"></script>
+</body>
+</html>
