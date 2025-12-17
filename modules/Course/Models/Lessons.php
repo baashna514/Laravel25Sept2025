@@ -75,8 +75,21 @@ class Lessons extends BaseModel
     public function getDownloadableLink(){
         $url = '';
         if($this->downloadable > 0){
-            $media = \DB::table('media_files')->where('id', $this->downloadable)->first();
-            $url = $media ? (($this->type == 'video')? 'storage/'.$media->file_path : 'uploads/'.$media->file_path) : '#';
+            $media = \DB::table('media_files')
+                ->where('id', $this->downloadable)
+                ->first();
+
+            if (!$media) {
+                $url = '#';
+            } else {
+                $url = 'public/uploads/'. ltrim($media->file_path, '/');
+//                if ($this->type === 'video') {
+//                    $url = 'public/uploads/'. ltrim($media->file_path, '/');
+//                    $url = asset('storage/' . ltrim($media->file_path, '/'));
+//                } else {
+//                    $url = asset('uploads/' . ltrim($media->file_path, '/'));
+//                }
+            }
         }
         return $url;
     }
