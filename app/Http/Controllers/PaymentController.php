@@ -31,8 +31,8 @@ class PaymentController extends Controller
 
             $phone = $request->input('easypaisa_phone');
             $email = $request->input('easypaisa_email');
-//            $amount = $request->input('amount');
-            $amount = 1;
+            $amount = $request->input('amount');
+//            $amount = 1;
 
             // Generate unique transaction ID
             $transactionId = 'TXN_' . time() . '_' . Str::random(8);
