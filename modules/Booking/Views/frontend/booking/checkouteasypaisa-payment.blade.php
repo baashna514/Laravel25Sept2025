@@ -5,7 +5,9 @@
 
     <div class="form-group">
         <label for="easypaisa_phone">{{ __('Phone Number (registered with EasyPaisa)') }} <span class="required">*</span></label>
-        <input type="text" id="easypaisa_phone" name="easypaisa_phone" class="form-control" placeholder="{{ __('Enter your EasyPaisa registered phone') }}" value="{{ old('easypaisa_phone') }}">
+        <input type="text" id="easypaisa_phone" name="easypaisa_phone" required class="form-control" placeholder="{{ __('Enter your EasyPaisa registered phone') }}" value="{{ old('easypaisa_phone') }}">
+        <label for="easypaisa_email">{{ __('Email (registered with EasyPaisa)') }} <span class="required">*</span></label>
+        <input type="text" id="easypaisa_email" name="easypaisa_email" required class="form-control" placeholder="{{ __('Enter your EasyPaisa registered email') }}" value="{{ old('easypaisa_email') }}">
     </div>
 
     {{-- You can add other EasyPaisa-specific fields here if needed --}}

@@ -145,6 +145,24 @@
     </div>
 </form>
 
+<!-- Processing Overlay -->
+<div id="processingOverlay" style="display:none;">
+    <div class="loader-box">
+        <div class="spinner"></div>
+
+        <h3>Payment Request Sent</h3>
+
+        <p class="primary-text">
+            Please check your mobile phone and confirm the payment.
+        </p>
+
+        <p class="secondary-text">
+            Do not close or refresh this page until the payment is completed.
+        </p>
+    </div>
+</div>
+
+
 <style>
 .payment-methods {
     display: flex;
@@ -199,18 +217,74 @@
         flex-direction: column;
         gap: 10px;
     }
-    
+
     .payment-method-option {
         max-width: none;
     }
 }
+
+
+
+#processingOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loader-box {
+    background: #ffffff;
+    padding: 30px 35px;
+    border-radius: 10px;
+    text-align: center;
+    width: 360px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.loader-box h3 {
+    margin-top: 15px;
+    font-size: 20px;
+    color: #1a7f37;
+    font-weight: 600;
+}
+
+.primary-text {
+    margin-top: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #333;
+}
+
+.secondary-text {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #666;
+}
+
+.spinner {
+    width: 46px;
+    height: 46px;
+    border: 4px solid #e5e5e5;
+    border-top: 4px solid #1a7f37;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 </style>
 
 <script>
    document.addEventListener('DOMContentLoaded', function() {
     // Get the current total amount from the page
     const originalTotal = {{ Cart::total() }};
-    
+
     // Calculate EasyPaisa total from cart items
     let easypaisaTotal = 0;
     @foreach(Cart::content() as $cartItem)
@@ -218,7 +292,7 @@
             easypaisaTotal += {{ $cartItem->model->easypaisa_price }} * {{ $cartItem->qty }};
         @endif
     @endforeach
-    
+
     // Show/hide payment method forms and update total
     function togglePaymentForms() {
         const selectedGateway = document.querySelector('input[name="payment_gateway"]:checked').value;
@@ -235,12 +309,12 @@
             updateTotalDisplay(easypaisaTotal, 'PKR');
         }
     }
-    
+
     // Function to update the total display in the sidebar
     function updateTotalDisplay(amount, currency) {
         const totalElement = document.getElementById('checkout-total');
         const currencyNote = document.getElementById('currency-note');
-        
+
         // Update cart item prices
         const cartItemPrices = document.querySelectorAll('.cart-item-price');
         cartItemPrices.forEach(priceElement => {
@@ -250,7 +324,7 @@
                 priceElement.textContent = priceElement.getAttribute('data-usd-price');
             }
         });
-        
+
         if (totalElement) {
             if (currency === 'PKR') {
                 // Show only EasyPaisa amount
@@ -286,19 +360,19 @@
     const form = document.getElementById('form-checkout');
     form.addEventListener('submit', function(e) {
         const selectedGateway = document.querySelector('input[name="payment_gateway"]:checked').value;
-        
+
         // Remove any existing hidden payment_gateway inputs to avoid duplicates
         document.querySelectorAll('input[name="payment_gateway"][type="hidden"]').forEach(input => {
             input.remove();
         });
-        
+
         // Add the selected payment gateway as a hidden input
         const gatewayInput = document.createElement('input');
         gatewayInput.type = 'hidden';
         gatewayInput.name = 'payment_gateway';
         gatewayInput.value = selectedGateway;
         form.appendChild(gatewayInput);
-        
+
         if (selectedGateway === 'easypaisa') {
             e.preventDefault();
             handleEasyPaisaPayment();
@@ -306,119 +380,117 @@
         // For Stripe, let the form submit normally
     });
 
-    function handleEasyPaisaPayment() {
-        // Get the phone number from the form
-        const phoneInput = document.querySelector('input[name="phone"]');
-        const phoneNumber = phoneInput ? phoneInput.value : '';
-        
-        if (!phoneNumber) {
-            alert('Please enter your phone number');
-            return;
-        }
-        
-        // Get the total amount from the cart
-        const totalAmount = {{ Cart::total() }};
-        
-        if (!totalAmount || totalAmount <= 0) {
-            alert('Invalid amount for payment');
-            return;
-        }
-        
-        // Show loading state
-        const submitBtn = document.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
-        submitBtn.textContent = 'Processing...';
-        submitBtn.disabled = true;
-        
-        // Call our new Easypaisa API
-        fetch('/api/easypaisa/pay', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                mobile_number: phoneNumber,
-                amount: totalAmount
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Create a new window/tab with the Easypaisa payment page
-                const newWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-                if (newWindow) {
-                    newWindow.document.write(data.form);
-                    newWindow.document.close();
-                    newWindow.focus();
-                    
-                    // Also save the booking data for later processing
-                    saveBookingData();
-                } else {
-                    alert('Popup blocked. Please allow popups and try again.');
-                    submitBtn.textContent = originalText;
-                    submitBtn.disabled = false;
-                }
-            } else {
-                alert('Payment failed: ' + (data.message || 'Unknown error'));
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Payment failed: ' + error.message);
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
-        });
-    }
-    
-    function saveBookingData() {
-        // Save booking data to session for later processing after payment
-        const formData = new FormData(form);
-        formData.append('payment_gateway', 'easypaisa');
-        
-        fetch('{{ route("booking.doCheckout") }}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status) {
-                console.log('Booking saved successfully');
-            } else {
-                console.error('Failed to save booking:', data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error saving booking:', error);
-        });
-    }
+       function handleEasyPaisaPayment() {
+           const phoneInput = document.querySelector('input[name="phone"]');
+           const easypaisa_phone_input = document.querySelector('input[name="easypaisa_phone"]');
+           const easypaisa_email_input = document.querySelector('input[name="easypaisa_email"]');
 
-    function submitToEasyPaisa(authToken) {
+           const phoneNumber = phoneInput ? phoneInput.value : '';
+           const easypaisa_phone = easypaisa_phone_input ? easypaisa_phone_input.value : '';
+           const easypaisa_email = easypaisa_email_input ? easypaisa_email_input.value : '';
+
+           if (!phoneNumber) {
+               alert('Please enter your phone number');
+               return;
+           }
+
+           const totalAmount = {{ Cart::total() }};
+           if (!totalAmount || totalAmount <= 0) {
+               alert('Invalid amount for payment');
+               return;
+           }
+
+           const submitBtn = document.querySelector('button[type="submit"]');
+           submitBtn.disabled = true;
+
+           // Show overlay immediately
+           document.getElementById('processingOverlay').style.display = 'flex';
+
+
+           fetch('/api/easypaisa/pay', {
+               method: 'POST',
+               headers: {
+                   'Content-Type': 'application/json',
+                   'X-CSRF-TOKEN': document
+                       .querySelector('meta[name="csrf-token"]')
+                       .getAttribute('content'),
+                   'Accept': 'application/json'
+               },
+               body: JSON.stringify({
+                   mobile_number: phoneNumber,
+                   amount: totalAmount,
+                   easypaisa_phone: easypaisa_phone,
+                   easypaisa_email: easypaisa_email
+               })
+           })
+               .then(response => response.json())
+               .then(data => {
+                   if (data.success) {
+                       saveBookingData();
+                   } else {
+                       document.getElementById('processingOverlay').style.display = 'none';
+                       submitBtn.disabled = false;
+
+                       alert('Payment failed. Please try again or choose a different payment method.');
+                       window.location.href = "{{ url('/') }}";
+                   }
+               })
+               .catch(error => {
+                   document.getElementById('processingOverlay').style.display = 'none';
+                   submitBtn.disabled = false;
+                   alert('Payment failed. Please try again.');
+               });
+       }
+
+       function saveBookingData() {
+       const formData = new FormData(form);
+       formData.append('payment_gateway', 'easypaisa');
+
+       fetch('{{ route("booking.doCheckout") }}', {
+           method: 'POST',
+           body: formData,
+           headers: {
+               'X-CSRF-TOKEN': document
+                   .querySelector('meta[name="csrf-token"]')
+                   .getAttribute('content')
+           }
+       })
+           .then(response => response.json())
+           .then(data => {
+               console.log("DATA: " + JSON.stringify(data));
+               if (data.success) {
+                   window.location.href = data.redirect_url;
+               } else {
+                   console.error('Failed to save booking:', data.message);
+                   alert(data.message || 'Booking failed');
+               }
+           })
+           .catch(error => {
+               console.error('Error saving booking:', error);
+               alert('Something went wrong. Please try again.');
+           });
+   }
+
+       function submitToEasyPaisa(authToken) {
         // Create a form to submit to EasyPaisa
         const easypaisaForm = document.createElement('form');
         easypaisaForm.method = 'POST';
         easypaisaForm.action = 'https://easypay.easypaisa.com.pk/easypay/Confirm.jsf';
         easypaisaForm.target = '_blank';
-        
+
         // Add auth token and postback URL
         const authInput = document.createElement('input');
         authInput.type = 'hidden';
         authInput.name = 'auth_token';
         authInput.value = authToken;
         easypaisaForm.appendChild(authInput);
-        
+
         const postbackInput = document.createElement('input');
         postbackInput.type = 'hidden';
         postbackInput.name = 'postBackURL';
         postbackInput.value = '{{ route("booking.confirmPayment", ["gateway" => "easypaisa"]) }}';
         easypaisaForm.appendChild(postbackInput);
-        
+
         document.body.appendChild(easypaisaForm);
         easypaisaForm.submit();
         document.body.removeChild(easypaisaForm);

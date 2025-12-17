@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Brikmas\Easypaisa\EasypaisaClient;
+use Brikmas\Easypaisa\Entities\PaymentReq;
+use Cmptrsntst\Config\ServicesConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
@@ -21,108 +24,63 @@ class PaymentController extends Controller
         try {
             // Validate request
             $request->validate([
-                'mobile_number' => 'required|string|min:11|max:15',
+                'easypaisa_phone' => 'required|string|min:11|max:15',
+                'easypaisa_email' => 'required|string',
                 'amount' => 'required|numeric|min:1'
             ]);
 
-            $mobileNumber = $request->input('mobile_number');
+            $phone = $request->input('easypaisa_phone');
+            $email = $request->input('easypaisa_email');
 //            $amount = $request->input('amount');
             $amount = 1;
 
             // Generate unique transaction ID
             $transactionId = 'TXN_' . time() . '_' . Str::random(8);
 
-            // Get config values
-            $storeId = '1144878';
-            $accountId = '1144878';
-            $merchantName = 'kingcambridgesolutions';
-            $hashKey = 'FTP0EKH68SWIJC5K';
-            $mode = 'production';
-//            $sandboxUrl = config('easypaisa.sandbox_url');
-            $liveUrl = 'https://easypay.easypaisa.com.pk/easypay/Index.jsf';
-            $paymentMethod = 'MA';
-            $currency = 'PKR';
+            $rspOfEp = $this->paymentViaEasypaisaV2($phone, $email, $amount, $transactionId);
+            if (isset($rspOfEp->responseCode) && $rspOfEp->responseCode == 0000)
+            {
+                $formattedAmount = number_format($amount, 2, '.', '');
+                $orderRefNum = 'KCS_' . $transactionId;
 
-            // Validate configuration
-            if (empty($storeId) || empty($hashKey) || empty($accountId) || empty($merchantName)) {
+                // Prepare payment data
+                $paymentData = [
+                    'amount' => $formattedAmount,
+                    'autoRedirect' => '1',
+                    'emailAddr' => $email,
+                    'mobileNum' => $phone,
+                    'orderRefNum' => $orderRefNum,
+                    'paymentMethod' => "MA",
+                    'storeId' => '70126',
+                    'merchantName' => 'Kingcambridgesolutions.com',
+                    'accountId' => '118028798',
+                ];
+
+                // Create transaction record
+                Transaction::create([
+                    'transaction_id' => $transactionId,
+                    'order_ref_num' => $orderRefNum,
+                    'mobile_number' => $phone,
+                    'amount' => $formattedAmount,
+                    'status' => 'success',
+                    'callback_data' => $paymentData,
+                    'easypaisa_transaction_id' => $transactionId,
+                    'response_code' => $rspOfEp->responseCode,
+                ]);
+
+                // Store order reference in session for later booking creation
+                session(['easypaisa_order_ref' => $orderRefNum]);
+
+                return response()->json([
+                    'success' => true,
+                    'transaction_id' => $transactionId,
+                ]);
+            }else{
                 return response()->json([
                     'success' => false,
-                    'message' => 'Easypaisa configuration incomplete. Please check your environment variables.'
+                    'message' => 'Payment initiation failed: ' . $e->getMessage()
                 ], 500);
             }
-
-            // Format amount to 2 decimal places
-            $formattedAmount = number_format($amount, 2, '.', '');
-
-            // Calculate expiry date (24 hours from now)
-            $expiryDate = date('Ymd', strtotime('+24 hours'));
-
-            // Generate order reference number
-            $orderRefNum = 'KCS_' . $transactionId;
-
-            // Prepare callback URL
-            $callbackUrl = route('easypaisa.callback');
-            $returnUrl = config('easypaisa.return_url', url('/'));
-            $cancelUrl = config('easypaisa.cancel_url', url('/'));
-
-            // Prepare payment data
-            $paymentData = [
-                'amount' => $formattedAmount,
-                'autoRedirect' => '1',
-                'emailAddr' => 'customer@example.com', // You can modify this based on your needs
-                'mobileNum' => $mobileNumber,
-                'orderRefNum' => $orderRefNum,
-                'paymentMethod' => $paymentMethod,
-                'postBackURL' => $callbackUrl,
-                'storeId' => $storeId,
-                'returnUrl' => $returnUrl,
-                'cancelUrl' => $cancelUrl,
-                'expiryDate' => $expiryDate,
-                'merchantName' => $merchantName,
-                'accountId' => $accountId,
-            ];
-
-            // Generate hash string for HMAC SHA256
-            $hashString = $formattedAmount . '&' . '1' . '&' . $paymentData['emailAddr'] . '&' . $mobileNumber . '&' . $orderRefNum . '&' . $paymentMethod . '&' . $callbackUrl . '&' . $storeId;
-
-            // Generate HMAC SHA256 hash
-            $merchantHashedReq = hash_hmac('sha256', $hashString, $hashKey);
-            $paymentData['merchantHashedReq'] = $merchantHashedReq;
-
-            // Determine the correct Easypaisa endpoint
-            $formAction = $mode === 'production' ? $liveUrl : $sandboxUrl;
-
-            // Create transaction record
-            Transaction::create([
-                'transaction_id' => $transactionId,
-                'order_ref_num' => $orderRefNum,
-                'mobile_number' => $mobileNumber,
-                'amount' => $formattedAmount,
-                'status' => 'pending',
-                'callback_data' => $paymentData
-            ]);
-
-            // Store order reference in session for later booking creation
-            session(['easypaisa_order_ref' => $orderRefNum]);
-
-            // Log payment initiation
-            Log::info('Easypaisa Payment Initiated', [
-                'transaction_id' => $transactionId,
-                'order_ref' => $orderRefNum,
-                'amount' => $formattedAmount,
-                'mobile' => $mobileNumber,
-                'mode' => $mode,
-                'hash_string' => $hashString
-            ]);
-
-            // Generate HTML form for auto-submit
-            $formHtml = $this->generateAutoSubmitForm($paymentData, $formAction);
-
-            return response()->json([
-                'success' => true,
-                'transaction_id' => $transactionId,
-                'form' => $formHtml
-            ]);
 
         } catch (\Exception $e) {
             Log::error('Easypaisa Payment Initiation Error', [
@@ -136,6 +94,25 @@ class PaymentController extends Controller
             ], 500);
         }
     }
+
+
+    private function paymentViaEasypaisaV2($phone, $email, $totalPrice, $txnRefNo)
+    {
+        $client = new EasypaisaClient([
+            'apiBaseUrl' => 'https://easypay.easypaisa.com.pk',
+            'merchantId' => '1144878',
+            'username' => 'Kingcambridgesolutions.com',
+            'password' => 'b30837a8d259caf6ff85a84765ab27e0'
+        ]);
+
+        $payload = new \Brikmas\Easypaisa\Entities\PaymentReq();
+        $payload->setTxnRefNumber($txnRefNo);
+        $payload->setAmount($totalPrice);
+        $payload->setEmailAddress($email);
+        $payload->setMobileNumber($phone);
+        return $client->callMobileAccountService($payload);
+    }
+
 
     /**
      * Handle Easypaisa payment callback

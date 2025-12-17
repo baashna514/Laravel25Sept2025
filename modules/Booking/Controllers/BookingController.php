@@ -142,7 +142,7 @@ class BookingController extends \App\Http\Controllers\Controller
 
     try {
         $booking = new Booking();
-        $booking->status = 'draft';
+        $booking->status = 'pending';
         $booking->first_name = $request->input('first_name');
         $booking->last_name = $request->input('last_name');
         $booking->email = $request->input('email');
@@ -250,15 +250,49 @@ class BookingController extends \App\Http\Controllers\Controller
                     $booking->addMeta('easypaisa_order_ref', $orderRef);
                     $booking->addMeta('easypaisa_amount', $booking->total);
                     $booking->save();
-
                     // Clear the session
                     session()->forget('easypaisa_order_ref');
                 }
 
-                // Return success - the payment will be handled by the frontend
-                return $this->sendSuccess('Booking created successfully. Please complete your payment.', [
-                    'booking_id' => $booking->id,
-                    'status' => 'draft'
+                $booking->update([
+                    'status' => 'confirmed'
+                ]);
+
+
+                $paymentData = [
+                    'amount' => $booking->total,
+                    'autoRedirect' => '1',
+                    'emailAddr' => $booking->email,
+                    'mobileNum' => $booking->phone,
+                    'orderRefNum' => $orderRef,
+                    'paymentMethod' => "MA",
+                    'storeId' => '70126',
+                    'merchantName' => 'Kingcambridgesolutions.com',
+                    'accountId' => '118028798',
+                ];
+
+                // Create payment record if BookingPayment class exists
+                if (class_exists('\Modules\Booking\Models\Payment')) {
+                    \Modules\Booking\Models\Payment::create([
+                        'booking_id' => $booking->id,
+                        'payment_gateway' => 'easypaisa',
+                        'amount' => $booking->total,
+                        'currency' => 'PKR',
+                        'converted_amount' => $booking->total,
+                        'converted_currency' => 'PKR',
+                        'exchange_rate' => 1,
+                        'status' => 'succeeded',
+                        'logs' => json_encode($paymentData),
+                        'create_user' => $booking->customer_id,
+                        'update_user' => $booking->customer_id,
+                    ]);
+                }
+
+                Cart::destroy();
+                // Mail::to($booking->email)->send(new \App\Mail\BookingConfirmed($booking));
+                return response()->json([
+                    'success' => true,
+                    'redirect_url' => route('booking.detail', ['code' => $booking->code])
                 ]);
             } catch (\Exception $e) {
                 return $this->sendError($e->getMessage());

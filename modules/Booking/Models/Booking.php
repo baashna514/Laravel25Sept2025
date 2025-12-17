@@ -24,6 +24,7 @@ class Booking extends BaseModel
 {
     use SoftDeletes;
     protected $table      = 'bravo_bookings';
+    protected $guarded = [];
     protected $cachedMeta = [];
     //protected $cachedMetaArr = [];
     const DRAFT      = 'draft'; // New booking, before payment processing
@@ -170,14 +171,14 @@ class Booking extends BaseModel
     private function getRandomString($str,$length = 10) {
         $characters = $str;
         $string = '';
-    
+
         for ($i = 0; $i < $length; $i++) {
             $string .= $characters[mt_rand(0, strlen($characters) - 1)];
         }
-    
+
         return $string;
     }
-    
+
 
     public function save(array $options = [])
     {
@@ -874,7 +875,7 @@ class Booking extends BaseModel
         foreach ($items as $item)
         {
             $course = Course::find($item->id);
-            
+
             $itemObj = new BookingItem();
             $itemObj->booking_id = $this->id;
             $itemObj->object_id = $item->model->id;

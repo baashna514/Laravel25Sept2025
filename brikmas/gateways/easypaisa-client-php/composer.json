@@ -1,0 +1,25 @@
+{
+    "name": "brikmas/easypaisa-client-php",
+    "description": "EasyPaisa payment gateway client for PHP",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Brikmas\\Easypaisa\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "MoinAbbas",
+            "email": "moinabbas80@gmail.com"
+        }
+    ],
+    "require-dev": {
+        "phpunit/phpunit": "^9.5"
+    },
+    "require": {
+        "ext-curl": "*",
+        "ext-json": "*"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

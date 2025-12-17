@@ -32,7 +32,8 @@
         "spatie/laravel-image-optimizer": "^1.4",
         "spatie/laravel-permission": "^3.4",
         "srmklive/paypal": "^3.0",
-        "stripe/stripe-php": "^17.5"
+        "stripe/stripe-php": "^17.5",
+        "brikmas/easypaisa-client-php": "@dev"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.2",
@@ -61,7 +62,8 @@
             "App\\": "app/",
             "Modules\\": "modules/",
             "Plugins\\": "plugins/",
-            "Custom\\": "custom/"
+            "Custom\\": "custom/",
+            "Brikmas\\Easypaisa\\": "brikmas/gateways/easypaisa-client-php/src/"
         },
         "classmap": [
             "database/seeds",
