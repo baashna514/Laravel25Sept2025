@@ -394,7 +394,13 @@
                return;
            }
 
-           const totalAmount = {{ Cart::total() }};
+           const totalText = document.getElementById('checkout-total').innerText;
+            // Remove currency and spaces, then convert to number
+           const totalAmount = parseFloat(
+               totalText.replace('PKR', '').trim()
+           );
+
+           {{--const totalAmount = {{ Cart::total() }};--}}
            if (!totalAmount || totalAmount <= 0) {
                alert('Invalid amount for payment');
                return;
