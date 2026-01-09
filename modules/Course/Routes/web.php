@@ -43,6 +43,12 @@ Route::group(['prefix'=>config('course.course_route_prefix')],function(){
     Route::get('/','CourseController@index')->name('course.search'); // Search
     Route::get('/{slug}','CourseController@detail')->name('course.detail'); // Detail
 
+    Route::get('/lesson/download/video/{lesson}', 'CourseController@video')
+        ->name('lesson.download.video');
+
+    Route::get('/lesson/download/file/{lesson}', 'CourseController@file')
+        ->name('lesson.download.file');
+
     Route::get('/{slug}/study', 'StudyController@study')->name('course.study');// Learn
     Route::get('/scorm-player/{id}','ScormPlayerController@player')->name('course.scorm_player');
     Route::post('/study-log','StudyController@studyLog')->name('course.study-log')->middleware('auth');

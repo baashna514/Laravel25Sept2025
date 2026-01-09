@@ -28,31 +28,38 @@
                                         @if (!empty($item->lessons))
                                             @php($allLectures += count($item->lessons))
                                             @foreach ($item->lessons as $counter => $lesson)
+
+                                                @if(!$is_paid && $counter >= 2)
+                                                    @break
+                                                @endif
+
                                                 <li>
                                                     {{ $lesson->name }}
-                                                    <span
-                                                        class="cs_time float-right ml-lg-4">{{ convertToHoursMinutes($lesson->duration) }}</span>
 
-                                                    <!-- Show download buttons always -->
-                                                    <a title="Download Video" target="_blank"
-                                                        download="{{ $lesson->name }}"
-                                                        href="{{ $lesson->getStudyUrlAttribute() }}"
-                                                        class="float-right icon custom-icon cs_time">
+                                                    <span class="cs_time float-right ml-lg-4">
+                                                        {{ convertToHoursMinutes($lesson->duration) }}
+                                                    </span>
+
+                                                    <!-- Video download -->
+                                                    <a title="Download Video"
+                                                       href="{{ route('lesson.download.video', $lesson->id) }}"
+                                                       class="float-right icon custom-icon cs_time">
                                                         <img src="/images/VideoDownload.png" width="30px" />
+                                                        <small>({{ $lesson->video_download_count ?? 0 }})</small>
                                                     </a>
+
+                                                    <!-- File download -->
                                                     @if (!empty($lesson->getDownloadableLink()))
-                                                        <a title="Download File" target="_blank"
-                                                            download="{{ $lesson->name }}"
-                                                            href="{{ url($lesson->getDownloadableLink()) }}"
-                                                            class="float-right icon custom-icon cs_time">
+                                                        <a title="Download File"
+                                                           href="{{ route('lesson.download.file', $lesson->id) }}"
+                                                           class="float-right icon custom-icon cs_time">
                                                             <img src="/images/FileDownload.png" width="30px" />
+                                                            <small>({{ $lesson->file_download_count ?? 0 }})</small>
                                                         </a>
                                                     @endif
-                                                    <soan title="Download File" target="_blank"
-                                                        class="float-right icon custom-icon cs_time">
-                                                        Downloads
-                                                    </span>
+
                                                 </li>
+
                                             @endforeach
                                         @endif
                                     </ul>

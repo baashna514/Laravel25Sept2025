@@ -40,13 +40,13 @@
                                                     href="#Overview" role="tab" aria-controls="Overview"
                                                     aria-selected="true">{{ __('Overview') }}</a>
                                             </li>
-                                            @if ($is_paid)
+{{--                                            @if ($is_paid)--}}
                                                 <li class="nav-item">
                                                     <a class="nav-link" id="course-tab" data-toggle="tab" href="#course"
                                                         role="tab" aria-controls="course"
                                                         aria-selected="false">{{ __('Course Content') }}</a>
                                                 </li>
-                                            @endif
+{{--                                            @endif--}}
                                             <li class="nav-item">
                                                 <a class="nav-link" id="instructor-tab" data-toggle="tab" href="#instructor"
                                                     role="tab" aria-controls="instructor"

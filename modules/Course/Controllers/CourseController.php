@@ -11,6 +11,7 @@ use Modules\Course\Models\Course;
 use Illuminate\Http\Request;
 use Modules\Course\Models\CourseCategory;
 use Modules\Course\Models\CourseTerm;
+use Modules\Course\Models\Lessons;
 use Modules\Course\Models\Sections;
 use Modules\Location\Models\Location;
 use Modules\Review\Models\Review;
@@ -58,7 +59,7 @@ class CourseController extends Controller
         if (!empty($price_range = $request->query('price_range'))) {
             $pri_from = explode(";", $price_range)[0];
             $pri_to = explode(";", $price_range)[1];
-            $raw_sql_min_max = "( (IFNULL(bravo_courses.sale_price,0) > 0 and bravo_courses.sale_price >= ? ) OR (IFNULL(bravo_courses.sale_price,0) <= 0 and bravo_courses.price >= ?) ) 
+            $raw_sql_min_max = "( (IFNULL(bravo_courses.sale_price,0) > 0 and bravo_courses.sale_price >= ? ) OR (IFNULL(bravo_courses.sale_price,0) <= 0 and bravo_courses.price >= ?) )
 								AND ( (IFNULL(bravo_courses.sale_price,0) > 0 and bravo_courses.sale_price <= ? ) OR (IFNULL(bravo_courses.sale_price,0) <= 0 and bravo_courses.price <= ?) )";
             $model_Course->WhereRaw($raw_sql_min_max, [$pri_from, $pri_from, $pri_to, $pri_to]);
         }
@@ -159,75 +160,94 @@ class CourseController extends Controller
         return view('Course::frontend.search', $data);
     }
 
-   public function detail(Request $request, $slug)
-{
-    $row = $this->courseClass::where('slug', $slug)
-        ->where("status", "publish")
-        ->with(['translations', 'hasWishList', 'pdfFile']) // add pdfFile relation here
-        ->first();
+   public function detail(Request $request, $slug){
+        $row = $this->courseClass::where('slug', $slug)
+            ->where("status", "publish")
+            ->with(['translations', 'hasWishList', 'pdfFile']) // add pdfFile relation here
+            ->first();
 
-    if (empty($row)) {
-        return redirect('/');
+        if (empty($row)) {
+            return redirect('/');
+        }
+
+        $is_paid = false;
+        if (Auth::check()) {
+            $userId = Auth::id();
+
+            $is_paid = BookingPayment::where('status', 'succeeded')
+                ->whereHas('booking', function ($q) use ($userId) {
+                    $q->where('customer_id', $userId)
+                      ->where('status', 'confirmed')
+                      ->whereNull('deleted_at');
+                })
+                ->whereHas('booking.items', function ($q2) use ($row) {
+                    $q2->where('object_id', $row->id)
+                       ->where('object_model', 'course');
+                })
+                ->exists();
+        }
+
+        $translation = $row->translateOrOrigin(app()->getLocale());
+        $review_list = Review::where('object_id', $row->id)
+            ->where('object_model', 'course')
+            ->where("status", "approved")
+            ->orderBy("id", "desc")
+            ->with('author')
+            ->paginate(setting_item('course_review_number_per_page', 5));
+
+        $section_list = Sections::where('course_id', $row->id)
+            ->where('service', 'course')
+            ->with('lessons')
+            ->orderBy("display_order", "asc")
+            ->get();
+
+        $is_student = false;
+        if (Auth::check()) {
+            $is_student = Auth::user()->isStudentOf($row->id);
+        }
+
+        $data = [
+            'row' => $row,
+            'translation' => $translation,
+            'review_list' => $review_list,
+            'section_list' => $section_list,
+            'seo_meta' => $row->getSeoMetaWithTranslation(app()->getLocale(), $translation),
+            'body_class' => 'is_single ',
+            'attributes' => $this->attributesClass::where('service', 'course')->get(),
+            'sections' => $this->sectionsClass::where('service', 'course')->get(),
+            'course_category' => $this->courseCategoryClass::where('status', 'publish')->get()->toTree(),
+            'tags' => $row->getTags(),
+            'hideBc' => '1',
+            'course_related' => $row->courseRelated,
+            'is_student' => $is_student,
+            'is_paid' => $is_paid,
+
+            // explicitly pass pdf file data for convenience if you want
+            'pdfFile' => $row->pdfFile,
+        ];
+
+        $this->setActiveMenu($row);
+        return view('Course::frontend.detail', $data);
     }
 
-    $is_paid = false;
-    if (Auth::check()) {
-        $userId = Auth::id();
+    public function video(Lessons $lesson)
+    {
+        $lesson->increment('video_download_count');
 
-        $is_paid = BookingPayment::where('status', 'succeeded')
-            ->whereHas('booking', function ($q) use ($userId) {
-                $q->where('customer_id', $userId)
-                  ->where('status', 'confirmed')
-                  ->whereNull('deleted_at');
-            })
-            ->whereHas('booking.items', function ($q2) use ($row) {
-                $q2->where('object_id', $row->id)
-                   ->where('object_model', 'course');
-            })
-            ->exists();
+        return response()->download(
+            storage_path('app/' . $lesson->video_path)
+        );
     }
 
-    $translation = $row->translateOrOrigin(app()->getLocale());
-    $review_list = Review::where('object_id', $row->id)
-        ->where('object_model', 'course')
-        ->where("status", "approved")
-        ->orderBy("id", "desc")
-        ->with('author')
-        ->paginate(setting_item('course_review_number_per_page', 5));
+    public function file(Lessons $lesson)
+    {
+        $lesson->increment('file_download_count');
 
-    $section_list = Sections::where('course_id', $row->id)
-        ->where('service', 'course')
-        ->with('lessons')
-        ->orderBy("display_order", "asc")
-        ->get();
-
-    $is_student = false;
-    if (Auth::check()) {
-        $is_student = Auth::user()->isStudentOf($row->id);
+        return response()->download(
+            storage_path('app/' . $lesson->downloadable_file)
+        );
     }
 
-    $data = [
-        'row' => $row,
-        'translation' => $translation,
-        'review_list' => $review_list,
-        'section_list' => $section_list,
-        'seo_meta' => $row->getSeoMetaWithTranslation(app()->getLocale(), $translation),
-        'body_class' => 'is_single ',
-        'attributes' => $this->attributesClass::where('service', 'course')->get(),
-        'sections' => $this->sectionsClass::where('service', 'course')->get(),
-        'course_category' => $this->courseCategoryClass::where('status', 'publish')->get()->toTree(),
-        'tags' => $row->getTags(),
-        'hideBc' => '1',
-        'course_related' => $row->courseRelated,
-        'is_student' => $is_student,
-        'is_paid' => $is_paid,
 
-        // explicitly pass pdf file data for convenience if you want
-        'pdfFile' => $row->pdfFile,
-    ];
-
-    $this->setActiveMenu($row);
-    return view('Course::frontend.detail', $data);
-}
 
 }
