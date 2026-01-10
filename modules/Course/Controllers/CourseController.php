@@ -232,51 +232,47 @@ class CourseController extends Controller
 
     public function video(Lessons $lesson)
     {
-        // Increment counter
         DB::table('bravo_course_lessons')
             ->where('id', $lesson->id)
             ->increment('video_download_count');
 
-        // Must have uploaded file
-        if (!$lesson->file_id) {
-            abort(404, 'Video file not found');
-        }
+        if (!$lesson->file_id) abort(404);
 
-        // Get public URL
         $fileUrl = get_file_url($lesson->file_id);
-
-        // Convert URL to physical path
         $relativePath = str_replace(asset(''), '', $fileUrl);
         $fullPath = public_path($relativePath);
 
-        if (!file_exists($fullPath)) {
-            abort(404);
-        }
+        $response = response()->download($fullPath);
 
-        return response()->download($fullPath);
+        $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
+
+        return $response;
     }
+
 
     public function file(Lessons $lesson)
     {
-        \Log::info('DOWNLOAD HIT', [
-            'lesson_id' => $lesson->id,
-            'time' => now()->toDateTimeString()
-        ]);
         DB::table('bravo_course_lessons')
             ->where('id', $lesson->id)
             ->increment('file_download_count');
 
         $path = $lesson->getDownloadableLink();
+        if (!$path || $path === '#') abort(404);
 
-        if (!$path || $path === '#') {
-            abort(404);
-        }
-
-        // Convert to absolute path
         $fullPath = public_path(str_replace('public/', '', $path));
 
-        return response()->download($fullPath);
+        $response = response()->download($fullPath);
+
+        // Disable caching properly
+        $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
+
+        return $response;
     }
+
 
 
 

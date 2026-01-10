@@ -42,7 +42,7 @@
 
                                                     <!-- Video download -->
                                                     <a title="Download Video"
-                                                       href="{{ route('lesson.download.video', $lesson->id) }}"
+                                                       href="{{ route('lesson.download.video', $lesson->id) }}?v={{ time() }}"
                                                        class="float-right icon custom-icon cs_time">
                                                         <img src="/images/VideoDownload.png" width="30px" />
                                                         <small>({{ $lesson->video_download_count ?? 0 }})</small>
@@ -51,7 +51,7 @@
                                                     <!-- File download -->
                                                     @if (!empty($lesson->getDownloadableLink()))
                                                         <a title="Download File"
-                                                           href="{{ route('lesson.download.file', $lesson->id) }}"
+                                                           href="{{ route('lesson.download.file', $lesson->id) }}?v={{ time() }}"
                                                            class="float-right icon custom-icon cs_time">
                                                             <img src="/images/FileDownload.png" width="30px" />
                                                             <small>({{ $lesson->file_download_count ?? 0 }})</small>
