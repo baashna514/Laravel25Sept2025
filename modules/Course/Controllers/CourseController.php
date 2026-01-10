@@ -258,6 +258,10 @@ class CourseController extends Controller
 
     public function file(Lessons $lesson)
     {
+        \Log::info('DOWNLOAD HIT', [
+            'lesson_id' => $lesson->id,
+            'time' => now()->toDateTimeString()
+        ]);
         DB::table('bravo_course_lessons')
             ->where('id', $lesson->id)
             ->increment('file_download_count');
