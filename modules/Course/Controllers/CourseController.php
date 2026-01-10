@@ -233,7 +233,9 @@ class CourseController extends Controller
     public function video(Lessons $lesson)
     {
         // Increment counter
-        $lesson->increment('video_download_count');
+        DB::table('bravo_course_lessons')
+            ->where('id', $lesson->id)
+            ->increment('video_download_count');
 
         // Must have uploaded file
         if (!$lesson->file_id) {
@@ -256,7 +258,9 @@ class CourseController extends Controller
 
     public function file(Lessons $lesson)
     {
-        $lesson->increment('file_download_count');
+        DB::table('bravo_course_lessons')
+            ->where('id', $lesson->id)
+            ->increment('file_download_count');
 
         $path = $lesson->getDownloadableLink();
 
