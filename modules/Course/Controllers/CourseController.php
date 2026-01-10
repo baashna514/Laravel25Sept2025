@@ -232,20 +232,42 @@ class CourseController extends Controller
 
     public function video(Lessons $lesson)
     {
+        // Increment counter
         $lesson->increment('video_download_count');
 
-        return response()->download(
-            storage_path('app/' . $lesson->video_path)
-        );
+        // Must have uploaded file
+        if (!$lesson->file_id) {
+            abort(404, 'Video file not found');
+        }
+
+        // Get public URL
+        $fileUrl = get_file_url($lesson->file_id);
+
+        // Convert URL to physical path
+        $relativePath = str_replace(asset(''), '', $fileUrl);
+        $fullPath = public_path($relativePath);
+
+        if (!file_exists($fullPath)) {
+            abort(404);
+        }
+
+        return response()->download($fullPath);
     }
 
     public function file(Lessons $lesson)
     {
         $lesson->increment('file_download_count');
 
-        return response()->download(
-            storage_path('app/' . $lesson->downloadable_file)
-        );
+        $path = $lesson->getDownloadableLink();
+
+        if (!$path || $path === '#') {
+            abort(404);
+        }
+
+        // Convert to absolute path
+        $fullPath = public_path(str_replace('public/', '', $path));
+
+        return response()->download($fullPath);
     }
 
 
