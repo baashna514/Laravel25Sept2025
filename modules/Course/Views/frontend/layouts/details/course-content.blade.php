@@ -60,6 +60,16 @@
 
                                                 </li>
 
+                                                    @if(!$is_paid && $counter == 1)
+                                                        <br>
+                                                        @if(!$is_paid && $counter == 1)
+                                                            <div style="text-align: center;">
+                                                                <span style="color: red; display: inline-block;">
+                                                                    Please Click "Add to Cart" button for all Questions Answer
+                                                                </span>
+                                                            </div>
+                                                        @endif
+                                                    @endif
                                             @endforeach
                                         @endif
                                     </ul>

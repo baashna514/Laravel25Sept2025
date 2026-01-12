@@ -36,13 +36,13 @@
                                     <div class="cs_rwo_tabs csv2">
                                         <ul class="nav nav-tabs" id="myTab" role="tablist">
                                             <li class="nav-item">
-                                                <a class="nav-link active" id="Overview-tab" data-toggle="tab"
+                                                <a class="nav-link" id="Overview-tab" data-toggle="tab"
                                                     href="#Overview" role="tab" aria-controls="Overview"
                                                     aria-selected="true">{{ __('Overview') }}</a>
                                             </li>
 {{--                                            @if ($is_paid)--}}
                                                 <li class="nav-item">
-                                                    <a class="nav-link" id="course-tab" data-toggle="tab" href="#course"
+                                                    <a class="nav-link active" id="course-tab" data-toggle="tab" href="#course"
                                                         role="tab" aria-controls="course"
                                                         aria-selected="false">{{ __('Course Content') }}</a>
                                                 </li>
@@ -61,7 +61,7 @@
                                             @endif
                                         </ul>
                                         <div class="tab-content" id="myTabContent">
-                                            <div class="tab-pane fade show active" id="Overview" role="tabpanel"
+                                            <div class="tab-pane fade" id="Overview" role="tabpanel"
                                                 aria-labelledby="Overview-tab">
                                                 <div class="cs_row_two csv2">
                                                     <div class="cs_overview">
@@ -75,7 +75,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="tab-pane fade" id="course" role="tabpanel"
+                                            <div class="tab-pane fade show active" id="course" role="tabpanel"
                                                 aria-labelledby="review-tab">
                                                 @include('Course::frontend.layouts.details.course-content')
                                             </div>
