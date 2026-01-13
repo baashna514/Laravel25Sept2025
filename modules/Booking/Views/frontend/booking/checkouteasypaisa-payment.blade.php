@@ -5,9 +5,9 @@
 
     <div class="form-group">
         <label for="easypaisa_phone">{{ __('Phone Number (registered with EasyPaisa)') }} <span class="required">*</span></label>
-        <input type="text" id="easypaisa_phone" name="easypaisa_phone" required class="form-control" placeholder="{{ __('Enter your EasyPaisa registered phone') }}" value="{{ old('easypaisa_phone') }}">
+        <input type="text" id="easypaisa_phone" name="easypaisa_phone" class="form-control" placeholder="{{ __('Enter your EasyPaisa registered phone') }}" value="{{ old('easypaisa_phone') }}">
         <label for="easypaisa_email">{{ __('Email (registered with EasyPaisa)') }} <span class="required">*</span></label>
-        <input type="text" id="easypaisa_email" name="easypaisa_email" required class="form-control" placeholder="{{ __('Enter your EasyPaisa registered email') }}" value="{{ old('easypaisa_email') }}">
+        <input type="text" id="easypaisa_email" name="easypaisa_email" class="form-control" placeholder="{{ __('Enter your EasyPaisa registered email') }}" value="{{ old('easypaisa_email') }}">
     </div>
 
     {{-- You can add other EasyPaisa-specific fields here if needed --}}
@@ -17,17 +17,27 @@
     document.addEventListener('DOMContentLoaded', function () {
         function toggleEasyPaisaFields() {
             const selected = document.querySelector('input[name="payment_gateway"]:checked').value;
-            const easypaisaContainer = document.getElementById('easypaisa-payment-container');
+            const container = document.getElementById('easypaisa-payment-container');
+
+            const phone = document.getElementById('easypaisa_phone');
+            const email = document.getElementById('easypaisa_email');
+
             if (selected === 'easypaisa') {
-                easypaisaContainer.style.display = 'block';
+                container.style.display = 'block';
+                phone.required = true;
+                email.required = true;
             } else {
-                easypaisaContainer.style.display = 'none';
+                container.style.display = 'none';
+                phone.required = false;
+                email.required = false;
             }
         }
+
         toggleEasyPaisaFields();
 
-        document.querySelectorAll('input[name="payment_gateway"]').forEach(function(radio){
+        document.querySelectorAll('input[name="payment_gateway"]').forEach(radio => {
             radio.addEventListener('change', toggleEasyPaisaFields);
         });
     });
 </script>
+
