@@ -55,3 +55,6 @@ Route::get('media/get-file', [\Modules\Media\Controllers\MediaController::class,
 Route::get('/easypaisa-test', function() {
     return view('easypaisa.test');
 });
+
+//Route::get('paypal/payment/success', 'PaymentController@paymentSuccess')->name('paypal.payment.success');
+//Route::get('paypal/payment/cancel', 'PaymentController@paymentCancel')->name('paypal.payment.cancel');

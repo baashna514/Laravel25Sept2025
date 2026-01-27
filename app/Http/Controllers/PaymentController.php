@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 use App\Transaction;
+use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
+use PayPalCheckoutSdk\Orders\OrdersCaptureRequest;
+use App\Services\PayPalClient;
 
 class PaymentController extends Controller
 {
@@ -341,5 +344,85 @@ class PaymentController extends Controller
         // For example, verify amount, check if order exists in database, etc.
 
         return true;
+    }
+
+
+    public function initiatePaypalPayment(Request $request)
+    {
+        $amount = $request->input('amount');
+        $client = PayPalClient::client();
+
+        $paypalRequest = new OrdersCreateRequest();
+        $paypalRequest->prefer('return=representation');
+        $paypalRequest->body = [
+            "intent" => "CAPTURE",
+            "purchase_units" => [[
+                "amount" => [
+                    "currency_code" => "USD",
+                    "value" => $amount
+                ]
+            ]],
+            "application_context" => [
+                "return_url" => route('paypal.payment.success'),
+                "cancel_url" => route('paypal.payment.cancel')
+            ]
+        ];
+        $response = $client->execute($paypalRequest);
+        foreach ($response->result->links as $link) {
+            if ($link->rel === 'approve') {
+                return response()->json([
+                    'success' => true,
+                    'approve_url' => $link->href
+                ]);
+            }
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Unable to create PayPal payment'
+        ]);
+    }
+
+
+
+
+    /**
+     * Write code on Method
+     *
+     * @return response()
+     */
+    public function paymentSuccess(Request $request)
+    {
+        if (!$request->has('token')) {
+            return 'Missing PayPal token';
+        }
+
+        $orderId = $request->get('token');
+        $client = PayPalClient::client();
+        $captureRequest = new OrdersCaptureRequest($orderId);
+        $captureRequest->prefer('return=representation');
+
+        try {
+            $response = $client->execute($captureRequest);
+        } catch (\Exception $e) {
+            \Log::error('PayPal Capture Error', [
+                'message' => $e->getMessage(),
+                'order_id' => $orderId
+            ]);
+            return 'PayPal capture failed';
+        }
+
+        if (isset($response->result->status) && $response->result->status === 'COMPLETED') {
+            // Payment is successful → return view that auto-submits booking
+            return view('paypal.success');
+        }
+
+        return "Payment not completed";
+    }
+
+
+    public function paymentCancel()
+    {
+        return "Payment cancelled by user.";
     }
 }

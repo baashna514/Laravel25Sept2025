@@ -86,7 +86,7 @@
                 <input type="radio" name="payment_gateway" value="stripe" checked>
                 <div class="payment-method-content">
                     <svg class="payment-icon" viewBox="0 0 120 24" width="140" height="28">
-                        <text x="0" y="16" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#635BFF">stripe</text>
+                        <text x="0" y="16" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#635BFF">Stripe</text>
                     </svg>
                 </div>
             </label>
@@ -104,7 +104,15 @@
                             <path fill="#00A651" d="M2 9c0 .6.4 1 1 1h4c.6 0 1-.4 1-1s-.4-1-1-1H3c-.6 0-1 .4-1 1z"/>
                         </g>
                         <!-- EasyPaisa text -->
-                        <text x="18" y="16" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#000000">easypaisa</text>
+                        <text x="18" y="16" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#000000">Easypaisa</text>
+                    </svg>
+                </div>
+            </label>
+            <label class="payment-method-option">
+                <input type="radio" name="payment_gateway" value="paypal">
+                <div class="payment-method-content">
+                    <svg class="payment-icon" viewBox="0 0 120 24" width="140" height="28">
+                        <text x="0" y="16" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#5fceff">Paypal</text>
                     </svg>
                 </div>
             </label>
@@ -158,6 +166,22 @@
 
         <p class="secondary-text">
             Do not close or refresh this page until the payment is completed.
+        </p>
+    </div>
+</div>
+
+<div id="processingPayPalOverlay" style="display:none;">
+    <div class="loader-box">
+        <div class="spinner"></div>
+
+        <h3>Payment Request Submitted</h3>
+
+        <p class="primary-text">
+            Please wait! We are redirecting you to PayPal Checkout Page.
+        </p>
+
+        <p class="secondary-text">
+            Do not close or refresh this page until the page is redirected to PayPal Checkout Page.
         </p>
     </div>
 </div>
@@ -298,6 +322,7 @@
         const selectedGateway = document.querySelector('input[name="payment_gateway"]:checked').value;
         const stripeDiv = document.getElementById('payment-stripe');
         const easypaisaDiv = document.getElementById('payment-easypaisa');
+        const paypalDiv = document.getElementById('payment-ayal');
 
         if (selectedGateway === 'stripe') {
             stripeDiv.style.display = 'block';
@@ -307,6 +332,10 @@
             stripeDiv.style.display = 'none';
             easypaisaDiv.style.display = 'block';
             updateTotalDisplay(easypaisaTotal, 'PKR');
+        }else if (selectedGateway === 'paypal') {
+            stripeDiv.style.display = 'none';
+            easypaisaDiv.style.display = 'none';
+            updateTotalDisplay(originalTotal, 'USD');
         }
     }
 
@@ -377,7 +406,9 @@
             e.preventDefault();
             handleEasyPaisaPayment();
         }
-        // For Stripe, let the form submit normally
+        else if (selectedGateway === 'paypal') {
+            handlePaypalPayment();
+        }
     });
 
        function handleEasyPaisaPayment() {
@@ -446,6 +477,43 @@
                    submitBtn.disabled = false;
                    alert('Payment failed. Please try again.');
                });
+       }
+
+       function handlePaypalPayment() {
+
+           // Show overlay immediately
+           document.getElementById('processingPayPalOverlay').style.display = 'flex';
+
+           const form = document.getElementById('form-checkout');
+           const formData = new FormData(form);
+           const dataObj = {};
+           formData.forEach((value, key) => {
+               dataObj[key] = value;
+           });
+
+           // Save booking form data in localStorage
+           localStorage.setItem('bookingFormData', JSON.stringify(dataObj));
+
+           fetch('/api/paypal/pay', {
+               method: 'POST',
+               headers: {
+                   'Content-Type': 'application/json',
+                   'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                   'Accept': 'application/json'
+               },
+               body: JSON.stringify({
+                   amount: {{ Cart::total() }}
+               })
+           })
+               .then(res => res.json())
+               .then(data => {
+                   if (data.success && data.approve_url) {
+                       window.location.href = data.approve_url;
+                   } else {
+                       alert('Unable to start PayPal payment');
+                   }
+               })
+               .catch(() => alert('Payment failed'));
        }
 
        function saveBookingData() {

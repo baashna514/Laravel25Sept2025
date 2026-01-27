@@ -128,7 +128,7 @@ class BookingController extends \App\Http\Controllers\Controller
     $gateways = get_payment_gateways();
 
     $gatewayObj = null;
-    if ($payment_gateway !== 'easypaisa') {
+    if ($payment_gateway !== 'easypaisa' && $payment_gateway !== 'paypal') {
         if (empty($gateways[$payment_gateway]) || !class_exists($gateways[$payment_gateway])) {
             return $this->sendError(__("Payment gateway not found"));
         }
@@ -139,6 +139,7 @@ class BookingController extends \App\Http\Controllers\Controller
             return $this->sendError(__("Payment gateway is not available"));
         }
     }
+
 
     try {
         $booking = new Booking();
@@ -243,6 +244,64 @@ class BookingController extends \App\Http\Controllers\Controller
 
         // Easypaisa Payment Processing - Save booking and return success
         if ($payment_gateway == 'easypaisa') {
+            try {
+                // Add Easypaisa order reference to booking meta if we have one from session
+                $orderRef = session('easypaisa_order_ref');
+                if ($orderRef) {
+                    $booking->addMeta('easypaisa_order_ref', $orderRef);
+                    $booking->addMeta('easypaisa_amount', $booking->total);
+                    $booking->save();
+                    // Clear the session
+                    session()->forget('easypaisa_order_ref');
+                }
+
+                $booking->update([
+                    'status' => 'confirmed'
+                ]);
+
+
+                $paymentData = [
+                    'amount' => $booking->total,
+                    'autoRedirect' => '1',
+                    'emailAddr' => $booking->email,
+                    'mobileNum' => $booking->phone,
+                    'orderRefNum' => $orderRef,
+                    'paymentMethod' => "MA",
+                    'storeId' => '70126',
+                    'merchantName' => 'Kingcambridgesolutions.com',
+                    'accountId' => '118028798',
+                ];
+
+                // Create payment record if BookingPayment class exists
+                if (class_exists('\Modules\Booking\Models\Payment')) {
+                    \Modules\Booking\Models\Payment::create([
+                        'booking_id' => $booking->id,
+                        'payment_gateway' => 'easypaisa',
+                        'amount' => $booking->total,
+                        'currency' => 'PKR',
+                        'converted_amount' => $booking->total,
+                        'converted_currency' => 'PKR',
+                        'exchange_rate' => 1,
+                        'status' => 'succeeded',
+                        'logs' => json_encode($paymentData),
+                        'create_user' => $booking->customer_id,
+                        'update_user' => $booking->customer_id,
+                    ]);
+                }
+
+                Cart::destroy();
+                // Mail::to($booking->email)->send(new \App\Mail\BookingConfirmed($booking));
+                return response()->json([
+                    'success' => true,
+                    'redirect_url' => route('booking.detail', ['code' => $booking->code])
+                ]);
+            } catch (\Exception $e) {
+                return $this->sendError($e->getMessage());
+            }
+        }
+
+        // Easypaisa Payment Processing - Save booking and return success
+        if ($payment_gateway == 'paypal') {
             try {
                 // Add Easypaisa order reference to booking meta if we have one from session
                 $orderRef = session('easypaisa_order_ref');
