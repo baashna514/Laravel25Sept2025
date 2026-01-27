@@ -423,6 +423,6 @@ class PaymentController extends Controller
 
     public function paymentCancel()
     {
-        return "Payment cancelled by user.";
+        return redirect('/')->with('error', 'Payment cancelled by user.');
     }
 }
