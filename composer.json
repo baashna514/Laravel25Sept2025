@@ -63,7 +63,8 @@
             "Modules\\": "modules/",
             "Plugins\\": "plugins/",
             "Custom\\": "custom/",
-            "Brikmas\\Easypaisa\\": "brikmas/gateways/easypaisa-client-php/src/"
+            "Brikmas\\Easypaisa\\": "brikmas/gateways/easypaisa-client-php/src/",
+            "Brikmas\\Jazzcash\\": "brikmas/gateways/jazzcash-client-php/src/"
         },
         "classmap": [
             "database/seeds",

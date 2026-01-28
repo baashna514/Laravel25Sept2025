@@ -83,7 +83,15 @@
         <label>{{ __('Select Payment Method') }}</label><br>
         <div class="payment-methods">
             <label class="payment-method-option">
-                <input type="radio" name="payment_gateway" value="stripe" checked>
+                <input type="radio" name="payment_gateway" value="paypal" checked>
+                <div class="payment-method-content">
+                    <svg class="payment-icon" viewBox="0 0 120 24" width="140" height="28">
+                        <text x="0" y="16" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#5fceff">Paypal</text>
+                    </svg>
+                </div>
+            </label>
+            <label class="payment-method-option">
+                <input type="radio" name="payment_gateway" value="stripe">
                 <div class="payment-method-content">
                     <svg class="payment-icon" viewBox="0 0 120 24" width="140" height="28">
                         <text x="0" y="16" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#635BFF">Stripe</text>
@@ -94,25 +102,15 @@
                 <input type="radio" name="payment_gateway" value="easypaisa">
                 <div class="payment-method-content">
                     <svg class="payment-icon" viewBox="0 0 120 24" width="140" height="28">
-                        <!-- EasyPaisa stylized 'e' icon -->
-                        <g>
-                            <!-- Upper black part of 'e' (incomplete oval) -->
-                            <path fill="#000000" d="M2 4c0-1.1.9-2 2-2h8c1.1 0 2 .9 2 2v3c0 .6-.4 1-1 1H5c-.6 0-1-.4-1-1V4z"/>
-                            <!-- Lower green curved part of 'e' -->
-                            <path fill="#00A651" d="M2 7c0 .6.4 1 1 1h6c.6 0 1-.4 1-1s-.4-1-1-1H3c-.6 0-1 .4-1 1z"/>
-                            <!-- Bottom curved part -->
-                            <path fill="#00A651" d="M2 9c0 .6.4 1 1 1h4c.6 0 1-.4 1-1s-.4-1-1-1H3c-.6 0-1 .4-1 1z"/>
-                        </g>
-                        <!-- EasyPaisa text -->
-                        <text x="18" y="16" font-family="Arial, sans-serif" font-size="14" font-weight="normal" fill="#000000">Easypaisa</text>
+                        <text x="0" y="16" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#00BE5F">Easypaisa</text>
                     </svg>
                 </div>
             </label>
             <label class="payment-method-option">
-                <input type="radio" name="payment_gateway" value="paypal">
+                <input type="radio" name="payment_gateway" value="jazzcash">
                 <div class="payment-method-content">
                     <svg class="payment-icon" viewBox="0 0 120 24" width="140" height="28">
-                        <text x="0" y="16" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#5fceff">Paypal</text>
+                        <text x="0" y="16" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#b7100f">Jazzcash</text>
                     </svg>
                 </div>
             </label>
@@ -124,6 +122,10 @@
 
     <div id="payment-easypaisa" style="display: none;">
         @include ($service->checkout_form_payment_file_easypaisa ?? 'Booking::frontend/booking/checkouteasypaisa-payment')
+    </div>
+
+    <div id="payment-jazzcash" style="display: none;">
+        @include ($service->checkout_form_payment_file_jazzcash ?? 'Booking::frontend/booking/checkouteasypaisa-payment')
     </div>
     @php
         $term_conditions = setting_item('booking_term_conditions');
