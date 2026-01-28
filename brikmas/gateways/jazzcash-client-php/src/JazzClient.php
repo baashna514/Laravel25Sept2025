@@ -123,8 +123,11 @@ class JazzClient
         curl_setopt($cURLConnection, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($cURLConnection, CURLOPT_FAILONERROR, false);
         curl_setopt($cURLConnection, CURLOPT_FOLLOWLOCATION, true);
-        
+
         $apiResponse = curl_exec($cURLConnection);
+
+        dd($apiResponse);
+
         $errorMessage = '';
 
         if (curl_errno($cURLConnection)) {

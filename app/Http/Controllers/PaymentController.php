@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Brikmas\Easypaisa\EasypaisaClient;
-use Brikmas\Easypaisa\Entities\PaymentReq;
+use Brikmas\Jazzcash\JazzClient;
 use Cmptrsntst\Config\ServicesConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -114,6 +114,113 @@ class PaymentController extends Controller
         $payload->setEmailAddress($email);
         $payload->setMobileNumber($phone);
         return $client->callMobileAccountService($payload);
+    }
+
+
+
+    public function initiateJazzcashPayment(Request $request)
+    {
+        try {
+            // Validate request
+            $request->validate([
+                'jazzcash_phone' => 'required|string|min:11|max:15',
+                'jazzcash_cnic' => 'required|string',
+                'amount' => 'required|numeric|min:1'
+            ]);
+
+            $phone = $request->input('jazzcash_phone');
+            $cnic = $request->input('jazzcash_cnic');
+            $amount = $request->input('amount');
+            $email = $request->input('email');
+//            $amount = 1;
+
+            // Generate unique transaction ID
+            $transactionId = 'TXN' . time();
+
+            $rspOfJazz = $this->paymentViaJazzcash($phone, $cnic, $amount, $transactionId);
+            if (isset($rspOfJazz->pp_ResponseCode) &&
+                (
+                    $rspOfJazz->pp_ResponseCode == 000 ||
+                    $rspOfJazz->pp_ResponseCode == 121 ||
+                    $rspOfJazz->pp_ResponseCode == 200
+                )
+            )
+            {
+                $formattedAmount = number_format($amount, 2, '.', '');
+                $orderRefNum = 'KCS_' . $transactionId;
+
+                // Prepare payment data
+                $paymentData = [
+                    'amount' => $formattedAmount,
+                    'autoRedirect' => '1',
+                    'emailAddr' => $email,
+                    'mobileNum' => $phone,
+                    'orderRefNum' => $orderRefNum,
+                    'paymentMethod' => "MA",
+                    'storeId' => '70126',
+                    'merchantName' => 'Kingcambridgesolutions.com',
+                    'accountId' => '118028798',
+                ];
+
+                // Create transaction record
+                Transaction::create([
+                    'transaction_id' => $transactionId,
+                    'order_ref_num' => $orderRefNum,
+                    'mobile_number' => $phone,
+                    'amount' => $formattedAmount,
+                    'status' => 'success',
+                    'callback_data' => $paymentData,
+                    'easypaisa_transaction_id' => $transactionId,
+                    'response_code' => 000,
+                ]);
+
+                // Store order reference in session for later booking creation
+                session(['jazzcash_order_ref' => $orderRefNum]);
+
+                return response()->json([
+                    'success' => true,
+                    'transaction_id' => $transactionId,
+                ]);
+            }else{
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Payment initiation failed'
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Jazzcash Payment Initiation Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment initiation failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    private function paymentViaJazzcash($phone, $cnic, $totalPrice, $txnRefNo)
+    {
+        $client = new JazzClient([
+//            'apiBaseUrl' => 'https://payments.jazzcash.com.pk/',
+            'apiBaseUrl' => 'https://sandbox.jazzcash.com.pk/',
+            'merchantId' => 'MC216932',
+            'password' => 'wc3x1u633c',
+            'salt' => 'cy0y203a80'
+        ]);
+
+        $paymentReq = new \Brikmas\Jazzcash\Entities\PaymentReq();
+        $paymentReq->setAmount($totalPrice);
+        $paymentReq->setBillRefNumber($txnRefNo);
+        $paymentReq->setDescription('Payment via Jazzcash');
+        $paymentReq->setTxnRefNumber($txnRefNo);
+        $paymentReq->setCnic($cnic);
+        $paymentReq->setMobileNumber($phone);
+
+        return $client->callMobileAccountService($paymentReq);
     }
 
 

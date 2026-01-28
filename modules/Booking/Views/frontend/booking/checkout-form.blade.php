@@ -125,7 +125,7 @@
     </div>
 
     <div id="payment-jazzcash" style="display: none;">
-        @include ($service->checkout_form_payment_file_jazzcash ?? 'Booking::frontend/booking/checkouteasypaisa-payment')
+        @include ('Booking::frontend/booking/checkout-jazzcash-payment')
     </div>
     @php
         $term_conditions = setting_item('booking_term_conditions');
@@ -324,7 +324,8 @@
         const selectedGateway = document.querySelector('input[name="payment_gateway"]:checked').value;
         const stripeDiv = document.getElementById('payment-stripe');
         const easypaisaDiv = document.getElementById('payment-easypaisa');
-        const paypalDiv = document.getElementById('payment-ayal');
+        const paypalDiv = document.getElementById('payment-paypal');
+        const jazzcashDiv = document.getElementById('payment-jazzcash');
 
         if (selectedGateway === 'stripe') {
             stripeDiv.style.display = 'block';
@@ -338,6 +339,12 @@
             stripeDiv.style.display = 'none';
             easypaisaDiv.style.display = 'none';
             updateTotalDisplay(originalTotal, 'USD');
+        }else if (selectedGateway === 'jazzcash') {
+            stripeDiv.style.display = 'none';
+            easypaisaDiv.style.display = 'none';
+            paypalDiv.style.display = 'none';
+            jazzcashDiv.style.display = 'block';
+            updateTotalDisplay(easypaisaTotal, 'PKR');
         }
     }
 
@@ -407,6 +414,8 @@
         if (selectedGateway === 'easypaisa') {
             e.preventDefault();
             handleEasyPaisaPayment();
+        }else if (selectedGateway === 'jazzcash') {
+            handleJazzcashPayment();
         }
         else if (selectedGateway === 'paypal') {
             handlePaypalPayment();
@@ -460,6 +469,78 @@
                    amount: totalAmount,
                    easypaisa_phone: easypaisa_phone,
                    easypaisa_email: easypaisa_email
+               })
+           })
+               .then(response => response.json())
+               .then(data => {
+                   if (data.success) {
+                       saveBookingData();
+                   } else {
+                       document.getElementById('processingOverlay').style.display = 'none';
+                       submitBtn.disabled = false;
+
+                       alert('Payment failed. Please try again or choose a different payment method.');
+                       window.location.href = "{{ url('/') }}";
+                   }
+               })
+               .catch(error => {
+                   document.getElementById('processingOverlay').style.display = 'none';
+                   submitBtn.disabled = false;
+                   alert('Payment failed. Please try again.');
+               });
+       }
+
+       function handleJazzcashPayment() {
+           const emailInput = document.querySelector('input[name="email"]');
+           const phoneInput = document.querySelector('input[name="phone"]');
+           const jazzcash_phone_input = document.querySelector('input[name="jazzcash_phone"]');
+           const jazzcash_cnic_input = document.querySelector('input[name="jazzcash_cnic"]');
+
+           const email = phoneInput ? emailInput.value : '';
+           const phoneNumber = phoneInput ? phoneInput.value : '';
+           const jazzcash_phone = jazzcash_phone_input ? jazzcash_phone_input.value : '';
+           const jazzcash_cnic = jazzcash_cnic_input ? jazzcash_cnic_input.value : '';
+
+           if (!phoneNumber) {
+               alert('Please enter your phone number');
+               return;
+           }
+
+           const totalText = document.getElementById('checkout-total').innerText;
+           // Remove currency and spaces, then convert to number
+           // const totalAmount = parseFloat(
+           //     totalText.replace('PKR', '').trim()
+           // );
+           var totalAmount = 1;
+
+           {{--const totalAmount = {{ Cart::total() }};--}}
+           if (!totalAmount || totalAmount <= 0) {
+               alert('Invalid amount for payment');
+               return;
+           }
+
+           const submitBtn = document.querySelector('button[type="submit"]');
+           submitBtn.disabled = true;
+
+           // Show overlay immediately
+           document.getElementById('processingOverlay').style.display = 'flex';
+
+
+           fetch('/api/jazzcash/pay', {
+               method: 'POST',
+               headers: {
+                   'Content-Type': 'application/json',
+                   'X-CSRF-TOKEN': document
+                       .querySelector('meta[name="csrf-token"]')
+                       .getAttribute('content'),
+                   'Accept': 'application/json'
+               },
+               body: JSON.stringify({
+                   email: email,
+                   mobile_number: phoneNumber,
+                   amount: totalAmount,
+                   jazzcash_phone: jazzcash_phone,
+                   jazzcash_cnic: jazzcash_cnic
                })
            })
                .then(response => response.json())

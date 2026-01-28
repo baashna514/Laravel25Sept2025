@@ -300,17 +300,17 @@ class BookingController extends \App\Http\Controllers\Controller
             }
         }
 
-        // Easypaisa Payment Processing - Save booking and return success
-        if ($payment_gateway == 'paypal') {
+        // Jazzcash Payment Processing - Save booking and return success
+        if ($payment_gateway == 'jazzcash') {
             try {
                 // Add Easypaisa order reference to booking meta if we have one from session
-                $orderRef = session('easypaisa_order_ref');
+                $orderRef = session('jazzcash_order_ref');
                 if ($orderRef) {
-                    $booking->addMeta('easypaisa_order_ref', $orderRef);
-                    $booking->addMeta('easypaisa_amount', $booking->total);
+                    $booking->addMeta('jazzcash_order_ref', $orderRef);
+                    $booking->addMeta('jazzcash_amount', $booking->total);
                     $booking->save();
                     // Clear the session
-                    session()->forget('easypaisa_order_ref');
+                    session()->forget('jazzcash_order_ref');
                 }
 
                 $booking->update([
@@ -334,7 +334,65 @@ class BookingController extends \App\Http\Controllers\Controller
                 if (class_exists('\Modules\Booking\Models\Payment')) {
                     \Modules\Booking\Models\Payment::create([
                         'booking_id' => $booking->id,
-                        'payment_gateway' => 'easypaisa',
+                        'payment_gateway' => 'jazzcash',
+                        'amount' => $booking->total,
+                        'currency' => 'PKR',
+                        'converted_amount' => $booking->total,
+                        'converted_currency' => 'PKR',
+                        'exchange_rate' => 1,
+                        'status' => 'succeeded',
+                        'logs' => json_encode($paymentData),
+                        'create_user' => $booking->customer_id,
+                        'update_user' => $booking->customer_id,
+                    ]);
+                }
+
+                Cart::destroy();
+                // Mail::to($booking->email)->send(new \App\Mail\BookingConfirmed($booking));
+                return response()->json([
+                    'success' => true,
+                    'redirect_url' => route('booking.detail', ['code' => $booking->code])
+                ]);
+            } catch (\Exception $e) {
+                return $this->sendError($e->getMessage());
+            }
+        }
+
+        // Paypall Payment Processing - Save booking and return success
+        if ($payment_gateway == 'paypal') {
+            try {
+                // Add Easypaisa order reference to booking meta if we have one from session
+                $orderRef = session('paypal_order_ref');
+                if ($orderRef) {
+                    $booking->addMeta('paypal_order_ref', $orderRef);
+                    $booking->addMeta('easypaisa_amount', $booking->total);
+                    $booking->save();
+                    // Clear the session
+                    session()->forget('paypal_order_ref');
+                }
+
+                $booking->update([
+                    'status' => 'confirmed'
+                ]);
+
+
+                $paymentData = [
+                    'amount' => $booking->total,
+                    'autoRedirect' => '1',
+                    'emailAddr' => $booking->email,
+                    'mobileNum' => $booking->phone,
+                    'orderRefNum' => $orderRef,
+                    'paymentMethod' => "MA",
+                    'storeId' => '70126',
+                    'merchantName' => 'Kingcambridgesolutions.com',
+                    'accountId' => '118028798',
+                ];
+
+                // Create payment record if BookingPayment class exists
+                if (class_exists('\Modules\Booking\Models\Payment')) {
+                    \Modules\Booking\Models\Payment::create([
+                        'booking_id' => $booking->id,
+                        'payment_gateway' => 'paypal',
                         'amount' => $booking->total,
                         'currency' => 'PKR',
                         'converted_amount' => $booking->total,
