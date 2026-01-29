@@ -2,6 +2,8 @@
 namespace Modules\Booking\Controllers;
 
 use Log;
+use Modules\Contact\Emails\NotificationToAdmin;
+use Modules\Contact\Models\Contact;
 use Validator;
 use DebugBar\DebugBar;
 use Mockery\Exception;
@@ -623,6 +625,19 @@ public function confirmPayment(Request $request, $gateway)
         if ($booking->gateway) {
             $data['gateway'] = get_payment_gateway_obj($booking->gateway);
         }
+
+        $contact = new Contact([
+            'name'    => $booking->first_name . ' ' . $booking->last_name,
+            'email'   => $booking->email,
+            'subject'   => 'Order Confirmation',
+            'message' => 'An Order has been successfully placed!',
+            'status'  => 'sent'
+        ]);
+        $contact->save();
+
+        $admin_email = 'musamother@gmail.com';
+        Mail::to($admin_email)->send(new NotificationToAdmin($contact->fresh()));
+
         return view('Booking::frontend/detail', $data);
     }
 
