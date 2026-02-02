@@ -342,7 +342,6 @@
         }else if (selectedGateway === 'jazzcash') {
             stripeDiv.style.display = 'none';
             easypaisaDiv.style.display = 'none';
-            paypalDiv.style.display = 'none';
             jazzcashDiv.style.display = 'block';
             updateTotalDisplay(easypaisaTotal, 'PKR');
         }
@@ -352,6 +351,9 @@
     function updateTotalDisplay(amount, currency) {
         const totalElement = document.getElementById('checkout-total');
         const currencyNote = document.getElementById('currency-note');
+
+        console.log("TOTAL: " + totalElement);
+        console.log("CURRENCY: " + currencyNote);
 
         // Update cart item prices
         const cartItemPrices = document.querySelectorAll('.cart-item-price');
