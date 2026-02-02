@@ -352,9 +352,6 @@
         const totalElement = document.getElementById('checkout-total');
         const currencyNote = document.getElementById('currency-note');
 
-        console.log("TOTAL: " + totalElement);
-        console.log("CURRENCY: " + currencyNote);
-
         // Update cart item prices
         const cartItemPrices = document.querySelectorAll('.cart-item-price');
         cartItemPrices.forEach(priceElement => {
