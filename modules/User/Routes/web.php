@@ -10,7 +10,7 @@ Route::group(['prefix'=>'user','middleware' => ['verified']],function(){
     Route::match(['get','post'],'/profile','UserController@profile')->name("user.profile.index");
     Route::match(['get','post'],'/profile/change-password','UserController@changePassword')->name("user.change_password");
     Route::get('/booking-history','UserController@bookingHistory')->name("vendor.booking_history");
-    Route::get('/booking-history','UserController@bookingHistory')->name("vendor.booking_history");
+//    Route::get('/booking-history','UserController@bookingHistory')->name("vendor.booking_history");
 
     Route::post('/wishlist','UserWishListController@handleWishList')->name("user.wishList.handle");
     Route::get('/wishlist','UserWishListController@index')->name("user.wishList.index");

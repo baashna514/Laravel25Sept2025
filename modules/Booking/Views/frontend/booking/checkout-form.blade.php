@@ -106,14 +106,14 @@
                     </svg>
                 </div>
             </label>
-            <label class="payment-method-option">
-                <input type="radio" name="payment_gateway" value="jazzcash">
-                <div class="payment-method-content">
-                    <svg class="payment-icon" viewBox="0 0 120 24" width="140" height="28">
-                        <text x="0" y="16" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#b7100f">Jazzcash</text>
-                    </svg>
-                </div>
-            </label>
+{{--            <label class="payment-method-option">--}}
+{{--                <input type="radio" name="payment_gateway" value="jazzcash">--}}
+{{--                <div class="payment-method-content">--}}
+{{--                    <svg class="payment-icon" viewBox="0 0 120 24" width="140" height="28">--}}
+{{--                        <text x="0" y="16" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#b7100f">Jazzcash</text>--}}
+{{--                    </svg>--}}
+{{--                </div>--}}
+{{--            </label>--}}
         </div>
     </div>
     <div id="payment-stripe" style="display: block;">
