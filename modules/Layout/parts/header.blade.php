@@ -35,11 +35,11 @@
                         <img class="logo2 img-fluid" src="{{$logo_sub}}" alt="{{setting_item("site_title")}}">
                     @endif
                 </div>
-               
+
                  <div style="margin-top: 4px;">
 
-                    <span style="font-size: 31px; font-weight:800;">KCS</span>
-                    <p style="color:white; margin-top:5px">King Cambridge Solutions</p>
+                    <span style="font-size: 31px; font-weight:800;">BABA</span>
+                    <p style="color:white; margin-top:5px">Baba Cambridge Solutions</p>
                 </div>
             </a>
 
@@ -53,7 +53,7 @@
                             <li>
                                 <a href="#" class="btn flaticon-user" data-toggle="modal" data-target="#login"> <span class="dn-lg">{{__('Login/Register')}}</span></a>
                                  <span class="btn flaticon-user" style="color: white;"><span class="dn-lg">No of visitor :</span>{{ $visitorCount }}</span>
-                           
+
                             </li>
                         @else
                             <li>
