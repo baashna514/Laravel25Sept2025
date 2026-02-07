@@ -27,7 +27,6 @@
                             <tbody class="table_body">
                             @if($bookings)
                             @foreach($bookings as $row)
-                                @dd($row)
                                 <tr>
                                     <td>{{$row->id}}</td>
                                     <th scope="row">
@@ -44,9 +43,9 @@
                                     <td>{{display_date($row->created_at)}}</td>
                                     <td>{{$row->statusName}}</td>
                                     @if($row->gateway == "easypaisa" || $row->gateway == "jazzcash")
-                                        <td class="cart_total">Rs {{ $row->total }}</td>
+                                        <td class="cart_total">Rs{{ $row->total }}</td>
                                     @else
-                                        <td class="cart_total">$ {{ $row->total }}</td>
+                                        <td class="cart_total">${{ $row->total }}</td>
                                     @endif
                                 </tr>
                             @endforeach
