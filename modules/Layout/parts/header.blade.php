@@ -39,7 +39,7 @@
                  <div style="margin-top: 4px;">
 
                     <span style="font-size: 31px; font-weight:800;">BABA</span>
-                    <p style="color:white; margin-top:5px">Cambridge Solutions</p>
+                    <p style="color:white; margin-top:0px; margin-left: 15px;">Cambridge Solutions</p>
                 </div>
             </a>
 
