@@ -635,8 +635,14 @@ public function confirmPayment(Request $request, $gateway)
         ]);
         $contact->save();
 
-        $admin_email = 'musamother@gmail.com';
-        Mail::to($admin_email)->send(new NotificationToAdmin($contact->fresh()));
+        // Currency logic
+        $currency = in_array($booking->gateway, ['easypaisa', 'jazzcash']) ? 'Rs.' : '$';
+        $messageBody = "Order Has Been Confirmed & Payment of {$currency}{$booking->total} has been received against customer {$booking->email}.";
+
+        Mail::raw($messageBody, function ($message) use ($booking) {
+            $message->to('musamother@gmail.com')
+                ->subject('Order Confirmation');
+        });
 
         return view('Booking::frontend/detail', $data);
     }

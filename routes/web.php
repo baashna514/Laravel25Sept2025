@@ -12,6 +12,12 @@ use Modules\Booking\Controllers\BookingController;
 */
 Route::get('/intro','LandingpageController@index');
 Route::get('/', 'HomeController@index');
+Route::get('/mail', function (){
+    \Illuminate\Support\Facades\Mail::raw('Test email from Laravel using Gmail', function ($message) {
+        $message->to('moinabbas80@gmail.com')
+            ->subject('Laravel Gmail SMTP Test');
+    });
+});
 Route::get('/home', 'HomeController@index')->name('home');
 Route::post('/install/check-db', 'HomeController@checkConnectDatabase');
 Route::get('/update', 'HomeController@updateMigrate');
